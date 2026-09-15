@@ -4,38 +4,78 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>HCMC Trip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #faf8f5; --surface: #ffffff; --border: #e7e2da;
-    --text: #2b2621; --text-muted: #8a8074; --accent: #c96a3c;
-    --accent-bg: #fbe9df; --success: #3f7d5c;
+    --bg: #fff8ef; --surface: #ffffff; --border: #f2e2cf;
+    --text: #3a2e2a; --text-muted: #9c8d80;
+    --coral: #ff7a5c; --coral-bg: #ffe6de;
+    --mango: #ffc145; --mango-bg: #fff4dc;
+    --lychee: #ff6f91; --lychee-bg: #ffe3ea;
+    --leaf: #4e9f6e; --leaf-bg: #e3f3e8;
   }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+  body { margin:0; font-family: "Nunito", -apple-system, sans-serif; background:var(--bg); color:var(--text); }
+  h1, h2, .area-title, .navbtn, .grpbtn, .daychip, button { font-family: "Baloo 2", "Nunito", sans-serif; }
   #app { max-width: 480px; margin: 0 auto; padding: 16px; padding-bottom: 60px; }
+
   .topnav { display:flex; gap:8px; margin-bottom:16px; }
-  .navbtn, .grpbtn { flex:1; padding:10px; font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; cursor:pointer; }
-  .navbtn.active, .grpbtn.active { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); font-weight:600; }
-  .illustration { width:100%; border-radius:12px; margin-bottom:12px; display:block; }
-  input[type=text], select, textarea { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:var(--surface); color:var(--text); }
-  .area-block { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
-  .area-title { font-weight:600; margin-bottom:8px; }
-  .type-label { font-size:12px; color:var(--text-muted); margin:10px 0 4px; }
+  .navbtn, .grpbtn {
+    flex:1; padding:11px; font-size:14px; font-weight:600; background:var(--surface);
+    border:2px solid var(--border); border-radius:16px; cursor:pointer; color:var(--text);
+    transition: transform .12s ease;
+  }
+  .navbtn:active, .grpbtn:active { transform: scale(0.96); }
+  .navbtn.active, .grpbtn.active { background:var(--coral); color:#fff; border-color:var(--coral); }
+
+  .illustration { width:100%; border-radius:20px; margin-bottom:14px; display:block; border: 3px solid var(--surface); box-shadow: 0 4px 0 var(--border); }
+
+  input[type=text], select, textarea {
+    width:100%; padding:11px 14px; border:2px solid var(--border); border-radius:14px;
+    font-size:14px; background:var(--surface); color:var(--text); font-family:inherit;
+  }
+  input[type=text]:focus, select:focus, textarea:focus { outline:none; border-color:var(--coral); }
+
+  .area-block { background:var(--surface); border:2px solid var(--border); border-radius:20px; padding:16px; margin-bottom:12px; }
+  .area-title { font-weight:700; margin-bottom:10px; font-size:16px; color:var(--coral); }
+  .type-label { font-size:12px; font-weight:700; color:var(--text-muted); margin:12px 0 6px; text-transform:none; }
   .type-label:first-of-type { margin-top:0; }
-  .all-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:14px; }
-  .place-label { display:flex; align-items:center; gap:8px; cursor:pointer; flex:1; }
-  .place-link { color:var(--accent); cursor:pointer; }
-  .tag { font-size:11px; padding:2px 8px; border-radius:8px; background:var(--bg); color:var(--text-muted); white-space:nowrap; }
-  .tag.must { color:#993c1d; }
-  .daychip { padding:8px 14px; border-radius:10px; border:1px solid var(--border); background:var(--surface); white-space:nowrap; cursor:pointer; font-size:14px; }
-  .daychip.active { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); font-weight:600; }
-  .daychips { display:flex; gap:6px; overflow-x:auto; margin-bottom:16px; padding-bottom:4px; }
-  .meal-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
-  .meal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:14px; color:var(--text-muted); }
-  .lockbtn { font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); cursor:pointer; }
-  .lockbtn.locked { background:#e7f3ec; color:var(--success); border-color:var(--success); }
-  .detail-row { padding:10px 0; border-top:1px solid var(--border); font-size:14px; }
+
+  .all-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; font-size:14px; }
+  .place-label { display:flex; align-items:center; gap:10px; cursor:pointer; flex:1; }
+  .place-label input[type=checkbox] { width:18px; height:18px; accent-color: var(--leaf); border-radius:6px; cursor:pointer; }
+  .place-link { color:var(--text); cursor:pointer; font-weight:600; }
+  .place-link:hover { color: var(--coral); }
+
+  .tag {
+    font-size:11px; font-weight:700; padding:3px 10px; border-radius:10px;
+    background:var(--mango-bg); color:#8a5a00; white-space:nowrap;
+    transform: rotate(-2deg); display:inline-block; border: 1.5px dashed #e3ad3a;
+  }
+  .tag.must { background:var(--coral-bg); color:#c8442a; border-color:var(--coral); }
+
+  .daychips { display:flex; gap:8px; overflow-x:auto; margin-bottom:16px; padding-bottom:4px; }
+  .daychip {
+    padding:9px 16px; border-radius:16px; border:2px solid var(--border); background:var(--surface);
+    white-space:nowrap; cursor:pointer; font-size:14px; font-weight:700; transition: transform .12s ease;
+  }
+  .daychip:active { transform: scale(0.94); }
+  .daychip.active { background:var(--lychee); color:#fff; border-color:var(--lychee); }
+
+  .meal-card { background:var(--surface); border:2px solid var(--border); border-radius:20px; padding:16px; margin-bottom:12px; }
+  .meal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:15px; font-weight:700; color:var(--text); }
+  .lockbtn {
+    font-size:12px; font-weight:700; padding:6px 14px; border-radius:12px; border:2px solid var(--border);
+    background:var(--bg); cursor:pointer; transition: transform .12s ease; font-family:"Baloo 2", sans-serif;
+  }
+  .lockbtn:active { transform: scale(0.94); }
+  .lockbtn.locked { background:var(--leaf-bg); color:var(--leaf); border-color:var(--leaf); }
+
+  .detail-row { padding:12px 0; border-top:2px dashed var(--border); font-size:14px; }
   .detail-row:first-of-type { border-top:none; }
+  .detail-row strong { color: var(--coral); }
   .back { margin-bottom:12px; }
   .loading, .error { text-align:center; color:var(--text-muted); padding:40px 0; font-size:14px; }
 </style>
@@ -45,7 +85,7 @@
 
 <script>
 // Paste the URL you get after deploying the Apps Script web app here.
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhRNQNFUEQX9j19lRWwmKq69wSRIxiDRVTkTzF2cJFMX022-q2lENpZ9H4H9VKUkGk8Q/exec";
+const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
 
 const state = {
   view: "overview",       // overview | day | place
@@ -113,17 +153,18 @@ function groupPlaces() {
 function renderOverview() {
   const groups = groupPlaces();
   let html = `
-    <img class="illustration" src="hcmc-trip-app-banner-v2.png" alt="HCMC trip illustration" />
+    <img class="illustration" src="hcmc-trip-app-banner.png" alt="HCMC trip illustration" />
     <div class="topnav">
       <button class="grpbtn ${state.groupBy==='area'?'active':''}" onclick="setGroup('area')">By area</button>
       <button class="grpbtn ${state.groupBy==='category'?'active':''}" onclick="setGroup('category')">By category</button>
     </div>
-    <input type="text" id="search" placeholder="Search all places" oninput="onSearch(this.value)" style="margin-bottom:12px;" />
+    <input type="text" id="search" placeholder="🔍 Search all your spots" oninput="onSearch(this.value)" style="margin-bottom:12px;" />
   `;
+  const emoji = { Food:"🍜", Drink:"🥤", Cafe:"☕", Dessert:"🍧", Massage:"💆", Shopping:"🛍️" };
   Object.keys(groups).sort().forEach(primaryKey => {
-    html += `<div class="area-block"><div class="area-title">${primaryKey}</div>`;
+    html += `<div class="area-block"><div class="area-title">${emoji[primaryKey] ? emoji[primaryKey]+" " : "📍 "}${primaryKey}</div>`;
     Object.keys(groups[primaryKey]).sort().forEach(secKey => {
-      html += `<div class="type-label">${secKey}</div>`;
+      html += `<div class="type-label">${emoji[secKey] ? emoji[secKey]+" " : ""}${secKey}</div>`;
       groups[primaryKey][secKey].forEach(p => {
         if (state.search && !p.name.toLowerCase().includes(state.search.toLowerCase())) return;
         html += `
@@ -150,9 +191,9 @@ function renderDay() {
   html += `</div>`;
 
   const meals = [
-    { key: "breakfast", label: "Breakfast" },
-    { key: "lunch", label: "Lunch" },
-    { key: "dinner", label: "Dinner" }
+    { key: "breakfast", label: "🌅 Breakfast" },
+    { key: "lunch", label: "☀️ Lunch" },
+    { key: "dinner", label: "🌙 Dinner" }
   ];
   const foodPlaces = state.places.filter(p => p.category === "Food");
 
@@ -164,10 +205,10 @@ function renderDay() {
       <div class="meal-card">
         <div class="meal-head">
           <span>${m.label}</span>
-          <button class="lockbtn ${locked?'locked':''}" onclick="toggleLock('${m.key}')">${locked ? "Locked" : "Lock it in"}</button>
+          <button class="lockbtn ${locked?'locked':''}" onclick="toggleLock('${m.key}')">${locked ? "🔒 Locked in!" : "Lock it in"}</button>
         </div>
         <select id="select-${m.key}" ${locked?'disabled':''} onchange="onMealSelect('${m.key}', this.value)">
-          <option value="">Choose a spot…</option>
+          <option value="">Still deciding…</option>
           ${foodPlaces.map(p => `<option value="${p.id}" ${selectedId===p.id?'selected':''}>${p.name}</option>`).join("")}
         </select>
       </div>`;
@@ -180,21 +221,21 @@ function renderPlace() {
   if (!p) return `<p class="error">Place not found</p>`;
   return `
     <button class="navbtn back" onclick="backToOverview()">&larr; Back</button>
-    <p style="font-weight:600;font-size:18px;margin:0 0 2px;">${p.name}</p>
-    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">${p.area} &middot; ${p.category}</p>
-    <div class="detail-row"><strong>IG / website:</strong> ${p.instagram ? `<a href="${p.instagram}" target="_blank">${p.instagram}</a>` : "—"}</div>
-    <div class="detail-row"><strong>Price:</strong> ${p.price || "—"}</div>
+    <p style="font-family:'Baloo 2',sans-serif; font-weight:700; font-size:20px; margin:6px 0 2px; color:var(--coral);">${p.name}</p>
+    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">📍 ${p.area} &middot; ${p.category}</p>
+    <div class="detail-row"><strong>📸 IG / website:</strong> ${p.instagram ? `<a href="${p.instagram}" target="_blank" style="color:var(--coral);">${p.instagram}</a>` : "—"}</div>
+    <div class="detail-row"><strong>💸 Price:</strong> ${p.price || "—"}</div>
     <div class="detail-row">
-      <strong>Notes</strong>
-      <textarea rows="4" id="notes-field" style="margin-top:6px;">${p.notes||""}</textarea>
+      <strong>📝 Notes</strong>
+      <textarea rows="4" id="notes-field" style="margin-top:8px;">${p.notes||""}</textarea>
     </div>
   `;
 }
 
 function render() {
   const app = document.getElementById("app");
-  if (state.loading) { app.innerHTML = `<div class="loading">Loading your list…</div>`; return; }
-  if (state.error) { app.innerHTML = `<div class="error">Couldn't load the sheet: ${state.error}</div>`; return; }
+  if (state.loading) { app.innerHTML = `<div class="loading">🧋 Fetching your trip list…</div>`; return; }
+  if (state.error) { app.innerHTML = `<div class="error">😵 Couldn't load the sheet: ${state.error}</div>`; return; }
 
   let html = "";
   if (state.view !== "place") {
