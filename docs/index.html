@@ -158,7 +158,7 @@ function renderOverview() {
       <button class="grpbtn ${state.groupBy==='area'?'active':''}" onclick="setGroup('area')">By area</button>
       <button class="grpbtn ${state.groupBy==='category'?'active':''}" onclick="setGroup('category')">By category</button>
     </div>
-    <input type="text" id="search" placeholder="🔍 Search all your spots" oninput="onSearch(this.value)" style="margin-bottom:12px;" />
+    <input type="text" id="search" placeholder="🔍 Search all your spots" value="${(state.search||'').replace(/"/g,'&quot;')}" oninput="onSearch(this.value)" style="margin-bottom:12px;" />
   `;
   const emoji = { Food:"🍜", Drink:"🥤", Cafe:"☕", Dessert:"🍧", Massage:"💆", Shopping:"🛍️" };
   Object.keys(groups).sort().forEach(primaryKey => {
@@ -254,7 +254,12 @@ function render() {
 function setView(v) { state.view = v; render(); }
 function setGroup(g) { state.groupBy = g; render(); }
 function setDay(d) { state.activeDay = d; render(); }
-function onSearch(v) { state.search = v; render(); }
+function onSearch(v) {
+  state.search = v;
+  render();
+  const el = document.getElementById("search");
+  if (el) { el.focus(); el.setSelectionRange(v.length, v.length); }
+}
 function openPlace(id) { state.selectedPlaceId = id; state.view = "place"; render(); }
 function backToOverview() { state.view = "overview"; render(); }
 function onMealSelect(meal, placeId) {
