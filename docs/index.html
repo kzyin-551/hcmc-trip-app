@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HCMC Trip</title>
+<style>
+  :root {
+    --bg: #faf8f5; --surface: #ffffff; --border: #e7e2da;
+    --text: #2b2621; --text-muted: #8a8074; --accent: #c96a3c;
+    --accent-bg: #fbe9df; --success: #3f7d5c;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+  #app { max-width: 480px; margin: 0 auto; padding: 16px; padding-bottom: 60px; }
+  .topnav { display:flex; gap:8px; margin-bottom:16px; }
+  .navbtn, .grpbtn { flex:1; padding:10px; font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; cursor:pointer; }
+  .navbtn.active, .grpbtn.active { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); font-weight:600; }
+  .illustration { width:100%; border-radius:12px; margin-bottom:12px; display:block; }
+  input[type=text], select, textarea { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; font-size:14px; background:var(--surface); color:var(--text); }
+  .area-block { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
+  .area-title { font-weight:600; margin-bottom:8px; }
+  .type-label { font-size:12px; color:var(--text-muted); margin:10px 0 4px; }
+  .type-label:first-of-type { margin-top:0; }
+  .all-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:14px; }
+  .place-label { display:flex; align-items:center; gap:8px; cursor:pointer; flex:1; }
+  .place-link { color:var(--accent); cursor:pointer; }
+  .tag { font-size:11px; padding:2px 8px; border-radius:8px; background:var(--bg); color:var(--text-muted); white-space:nowrap; }
+  .tag.must { color:#993c1d; }
+  .daychip { padding:8px 14px; border-radius:10px; border:1px solid var(--border); background:var(--surface); white-space:nowrap; cursor:pointer; font-size:14px; }
+  .daychip.active { background:var(--accent-bg); color:var(--accent); border-color:var(--accent); font-weight:600; }
+  .daychips { display:flex; gap:6px; overflow-x:auto; margin-bottom:16px; padding-bottom:4px; }
+  .meal-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
+  .meal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:14px; color:var(--text-muted); }
+  .lockbtn { font-size:12px; padding:4px 10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); cursor:pointer; }
+  .lockbtn.locked { background:#e7f3ec; color:var(--success); border-color:var(--success); }
+  .detail-row { padding:10px 0; border-top:1px solid var(--border); font-size:14px; }
+  .detail-row:first-of-type { border-top:none; }
+  .back { margin-bottom:12px; }
+  .loading, .error { text-align:center; color:var(--text-muted); padding:40px 0; font-size:14px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// Paste the URL you get after deploying the Apps Script web app here.
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhRNQNFUEQX9j19lRWwmKq69wSRIxiDRVTkTzF2cJFMX022-q2lENpZ9H4H9VKUkGk8Q/exec";
+
+const state = {
+  view: "overview",       // overview | day | place
+  groupBy: "area",        // area | category
+  activeDay: "1",
+  selectedPlaceId: null,
+  places: [],
+  plans: [],
+  loading: true,
+  error: null
+};
+
+async function loadData() {
+  state.loading = true; state.error = null; render();
+  try {
+    const res = await fetch(SCRIPT_URL);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    state.places = data.places;
+    state.plans = data.plans;
+  } catch (e) {
+    state.error = e.message;
+  }
+  state.loading = false;
+  render();
+}
+
+async function toggleVisited(id, visited) {
+  const place = state.places.find(p => p.id === id);
+  place.visited = visited ? "TRUE" : "FALSE"; // optimistic update
+  render();
+  await fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids a CORS preflight
+    body: JSON.stringify({ action: "visited", id, visited })
+  });
+}
+
+async function setLock(day, meal, placeId, locked) {
+  let plan = state.plans.find(p => String(p.day) === String(day) && p.meal === meal);
+  if (!plan) { plan = { day, meal, place_id: placeId, locked: locked ? "TRUE":"FALSE" }; state.plans.push(plan); }
+  plan.place_id = placeId; plan.locked = locked ? "TRUE":"FALSE";
+  render();
+  await fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids a CORS preflight
+    body: JSON.stringify({ action: "lock", day, meal, place_id: placeId, locked })
+  });
+}
+
+function isTrue(v) { return String(v).toUpperCase() === "TRUE"; }
+
+function groupPlaces() {
+  const groups = {};
+  const primary = state.groupBy === "area" ? "area" : "category";
+  const secondary = state.groupBy === "area" ? "category" : "area";
+  state.places.forEach(p => {
+    if (!groups[p[primary]]) groups[p[primary]] = {};
+    if (!groups[p[primary]][p[secondary]]) groups[p[primary]][p[secondary]] = [];
+    groups[p[primary]][p[secondary]].push(p);
+  });
+  return groups;
+}
+
+function renderOverview() {
+  const groups = groupPlaces();
+  let html = `
+    <img class="illustration" src="hcmc-trip-app-banner-v2.png" alt="HCMC trip illustration" />
+    <div class="topnav">
+      <button class="grpbtn ${state.groupBy==='area'?'active':''}" onclick="setGroup('area')">By area</button>
+      <button class="grpbtn ${state.groupBy==='category'?'active':''}" onclick="setGroup('category')">By category</button>
+    </div>
+    <input type="text" id="search" placeholder="Search all places" oninput="onSearch(this.value)" style="margin-bottom:12px;" />
+  `;
+  Object.keys(groups).sort().forEach(primaryKey => {
+    html += `<div class="area-block"><div class="area-title">${primaryKey}</div>`;
+    Object.keys(groups[primaryKey]).sort().forEach(secKey => {
+      html += `<div class="type-label">${secKey}</div>`;
+      groups[primaryKey][secKey].forEach(p => {
+        if (state.search && !p.name.toLowerCase().includes(state.search.toLowerCase())) return;
+        html += `
+          <div class="all-row">
+            <label class="place-label">
+              <input type="checkbox" ${isTrue(p.visited)?'checked':''} onchange="toggleVisited('${p.id}', this.checked)" />
+              <span class="place-link" onclick="openPlace('${p.id}')">${p.name}</span>
+            </label>
+            <span class="tag ${p.tier==='must-do'?'must':''}">${p.tier||''}</span>
+          </div>`;
+      });
+    });
+    html += `</div>`;
+  });
+  return html;
+}
+
+function renderDay() {
+  const days = ["1","2","3","4","5","6"];
+  let html = `<div class="daychips">`;
+  days.forEach(d => {
+    html += `<div class="daychip ${state.activeDay===d?'active':''}" onclick="setDay('${d}')">Day ${d}</div>`;
+  });
+  html += `</div>`;
+
+  const meals = [
+    { key: "breakfast", label: "Breakfast" },
+    { key: "lunch", label: "Lunch" },
+    { key: "dinner", label: "Dinner" }
+  ];
+  const foodPlaces = state.places.filter(p => p.category === "Food");
+
+  meals.forEach(m => {
+    const plan = state.plans.find(p => String(p.day)===state.activeDay && p.meal===m.key);
+    const locked = plan && isTrue(plan.locked);
+    const selectedId = plan ? plan.place_id : "";
+    html += `
+      <div class="meal-card">
+        <div class="meal-head">
+          <span>${m.label}</span>
+          <button class="lockbtn ${locked?'locked':''}" onclick="toggleLock('${m.key}')">${locked ? "Locked" : "Lock it in"}</button>
+        </div>
+        <select id="select-${m.key}" ${locked?'disabled':''} onchange="onMealSelect('${m.key}', this.value)">
+          <option value="">Choose a spot…</option>
+          ${foodPlaces.map(p => `<option value="${p.id}" ${selectedId===p.id?'selected':''}>${p.name}</option>`).join("")}
+        </select>
+      </div>`;
+  });
+  return html;
+}
+
+function renderPlace() {
+  const p = state.places.find(pl => pl.id === state.selectedPlaceId);
+  if (!p) return `<p class="error">Place not found</p>`;
+  return `
+    <button class="navbtn back" onclick="backToOverview()">&larr; Back</button>
+    <p style="font-weight:600;font-size:18px;margin:0 0 2px;">${p.name}</p>
+    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">${p.area} &middot; ${p.category}</p>
+    <div class="detail-row"><strong>IG / website:</strong> ${p.instagram ? `<a href="${p.instagram}" target="_blank">${p.instagram}</a>` : "—"}</div>
+    <div class="detail-row"><strong>Price:</strong> ${p.price || "—"}</div>
+    <div class="detail-row">
+      <strong>Notes</strong>
+      <textarea rows="4" id="notes-field" style="margin-top:6px;">${p.notes||""}</textarea>
+    </div>
+  `;
+}
+
+function render() {
+  const app = document.getElementById("app");
+  if (state.loading) { app.innerHTML = `<div class="loading">Loading your list…</div>`; return; }
+  if (state.error) { app.innerHTML = `<div class="error">Couldn't load the sheet: ${state.error}</div>`; return; }
+
+  let html = "";
+  if (state.view !== "place") {
+    html += `
+      <div class="topnav">
+        <button class="navbtn ${state.view==='overview'?'active':''}" onclick="setView('overview')">Overview</button>
+        <button class="navbtn ${state.view==='day'?'active':''}" onclick="setView('day')">Day</button>
+      </div>`;
+  }
+  if (state.view === "overview") html += renderOverview();
+  if (state.view === "day") html += renderDay();
+  if (state.view === "place") html += renderPlace();
+  app.innerHTML = html;
+}
+
+function setView(v) { state.view = v; render(); }
+function setGroup(g) { state.groupBy = g; render(); }
+function setDay(d) { state.activeDay = d; render(); }
+function onSearch(v) { state.search = v; render(); }
+function openPlace(id) { state.selectedPlaceId = id; state.view = "place"; render(); }
+function backToOverview() { state.view = "overview"; render(); }
+function onMealSelect(meal, placeId) {
+  const plan = state.plans.find(p => String(p.day)===state.activeDay && p.meal===meal) || {day:state.activeDay, meal, locked:"FALSE"};
+  plan.place_id = placeId;
+  if (!state.plans.includes(plan)) state.plans.push(plan);
+}
+function toggleLock(meal) {
+  const select = document.getElementById("select-"+meal);
+  const placeId = select.value;
+  const plan = state.plans.find(p => String(p.day)===state.activeDay && p.meal===meal);
+  const currentlyLocked = plan && isTrue(plan.locked);
+  if (!currentlyLocked && !placeId) { alert("Pick a place first"); return; }
+  setLock(state.activeDay, meal, placeId, !currentlyLocked);
+}
+
+loadData();
+</script>
+</body>
+</html>
